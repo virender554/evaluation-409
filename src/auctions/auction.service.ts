@@ -38,20 +38,30 @@ export class AuctionService {
     return this.auctionRepository.save(auction);
   }
 
-  async findAll(page: number = 1, limit: number = 10, status?: AuctionStatus, sort: 'ASC' | 'DESC' = 'ASC'): Promise<{ data: AuctionItem[], total: number, page: number, limit: number }> {
+  async findAll(
+    page: number = 1,
+    limit: number = 10,
+    status?: AuctionStatus,
+    sort: 'ASC' | 'DESC' = 'ASC',
+    excludeUserId?: string,
+  ): Promise<{ data: AuctionItem[]; total: number; page: number; limit: number }> {
     const query = this.auctionRepository.createQueryBuilder('auction');
 
     if (status) {
       query.andWhere('auction.status = :status', { status });
     }
 
-    // Prioritize ACTIVE auctions, then sort by endsAt (soonest first)
+    if (excludeUserId) {
+      query.andWhere('auction.creatorId != :excludeUserId', { excludeUserId });
+    }
+
+    // Prioritize ACTIVE auctions, then show newest first (createdAt DESC), then ending soonest (endsAt ASC)
     query
       .leftJoinAndSelect('auction.creator', 'creator')
       .addSelect(`CASE WHEN auction.status = '${AuctionStatus.ACTIVE}' THEN 1 ELSE 2 END`, 'status_priority')
       .orderBy('status_priority', 'ASC')
-      .addOrderBy('auction.endsAt', 'ASC')
       .addOrderBy('auction.createdAt', 'DESC')
+      .addOrderBy('auction.endsAt', 'ASC')
       .skip((page - 1) * limit)
       .take(limit);
 

@@ -55,13 +55,15 @@ export class AuctionController {
   }
 
   @Get()
+  @UseGuards(AuthGuard('jwt'))
   findAll(
+    @CurrentUser() user: User,
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 10,
     @Query('status') status?: AuctionStatus,
     @Query('sort') sort: 'ASC' | 'DESC' = 'ASC',
   ) {
-    return this.auctionService.findAll(Number(page), Number(limit), status, sort);
+    return this.auctionService.findAll(Number(page), Number(limit), status, sort, user.id);
   }
 
   //place bid on auction
