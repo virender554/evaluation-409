@@ -48,7 +48,8 @@ export class AuctionService {
     // Prioritize ACTIVE auctions, then sort by endsAt (soonest first)
     query
       .leftJoinAndSelect('auction.creator', 'creator')
-      .orderBy(`CASE WHEN auction.status = '${AuctionStatus.ACTIVE}' THEN 1 ELSE 2 END`, 'ASC')
+      .addSelect(`CASE WHEN auction.status = '${AuctionStatus.ACTIVE}' THEN 1 ELSE 2 END`, 'status_priority')
+      .orderBy('status_priority', 'ASC')
       .addOrderBy('auction.endsAt', 'ASC')
       .addOrderBy('auction.createdAt', 'DESC')
       .skip((page - 1) * limit)
