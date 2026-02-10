@@ -79,7 +79,6 @@ export class AuctionController {
   @Get('my-auctions')
   @UseGuards(AuthGuard('jwt'))
   async getMyAuctions(@CurrentUser() user: User) {
-    console.log("==========================", user);
     return this.auctionService.findMyAuctions(user.id);
   }
 
@@ -100,6 +99,13 @@ export class AuctionController {
 
 
   
+  //dashboard
+  @Get('dashboard')
+  @UseGuards(AuthGuard('jwt'))
+  async getDashboard(@CurrentUser() user: User) {
+    return this.auctionService.getDashboard(user.id);
+  }
+
   //get auction by id(my added auction)
   @Get(':id')
   async findOne(@Param('id', ParseUUIDPipe) id: string) {

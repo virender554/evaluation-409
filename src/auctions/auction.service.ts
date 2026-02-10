@@ -45,8 +45,12 @@ export class AuctionService {
       query.andWhere('auction.status = :status', { status });
     }
 
+    // Prioritize ACTIVE auctions, then sort by endsAt (soonest first)
     query
-      .orderBy('auction.endsAt', sort)
+      .leftJoinAndSelect('auction.creator', 'creator')
+      .orderBy(`CASE WHEN auction.status = '${AuctionStatus.ACTIVE}' THEN 1 ELSE 2 END`, 'ASC')
+      .addOrderBy('auction.endsAt', 'ASC')
+      .addOrderBy('auction.createdAt', 'DESC')
       .skip((page - 1) * limit)
       .take(limit);
 
@@ -180,7 +184,7 @@ export class AuctionService {
         auctionId,
         amount,
         bidderId: user.id,
-        bidderEmail: user.email 
+        bidderEmail: user.email
     });
 
     return result;
@@ -299,5 +303,32 @@ export class AuctionService {
       select: ['id', 'email', 'balance', 'createdAt'],
     });
     return user;
+  }
+
+  async getDashboard(userId: string) {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      relations: ['auctionsCreated', 'bids', 'auctionsWon'],
+    });
+
+    const { totalBalance } = await this.userRepository
+      .createQueryBuilder('user')
+      .select('SUM(user.balance)', 'totalBalance')
+      .getRawOne();
+    
+    if (user) {
+      return {
+        id: user.id,
+        email: user.email,
+        balance: user.balance,
+        totalAuctionsCreated: user.auctionsCreated.length,
+        totalBidsPlaced: user.bids.length,
+        totalAuctionsWon: user.auctionsWon.length,
+        // totalSystemBalance: parseFloat(totalBalance || 0),
+        createdAt: user.createdAt,
+      };
+    }
+    
+    return null;
   }
 }

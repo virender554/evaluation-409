@@ -14,9 +14,11 @@ async function bootstrap() {
   app.enableShutdownHooks();
 
   app.enableCors({
-    origin: true,
+    origin: (origin, callback) => callback(null, true),
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
+    allowedHeaders: '*',
+    exposedHeaders: '*',
   });
   
   const redisIoAdapter = new RedisIoAdapter(app);

@@ -16,7 +16,8 @@ import { Injectable, UseGuards, UnauthorizedException } from '@nestjs/common';
 
 @WebSocketGateway({
   cors: {
-    origin: '*',
+    origin: (origin, callback) => callback(null, true),
+    credentials: true,
   },
   namespace: 'auctions',
 })
